@@ -1,0 +1,389 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Company ──────────────────────────────────────────────────────────────────
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users   User[]
+  vessels Vessel[]
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id         String     @id @default(cuid())
+  name       String
+  email      String     @unique
+  password   String
+  phone      String?
+  position   String?
+  department String?
+  role       Role       @default(USER)
+  status     UserStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  vesselAccess  VesselUserAccess[]
+  tasksAssigned MaintenanceTask[]    @relation("AssignedTo")
+  defectsRaised Defect[]             @relation("RaisedBy")
+  wcrs          WorkCompletionReport[]
+}
+
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ─── Vessel ───────────────────────────────────────────────────────────────────
+
+model Vessel {
+  id             String       @id @default(cuid())
+  name           String
+  imoNumber      String?      @unique
+  officialNumber String?
+  callSign       String?
+  mmsi           String?
+  flag           String?
+  portOfRegistry String?
+  vesselType     VesselType   @default(WORKBOAT)
+  status         VesselStatus @default(ACTIVE)
+
+  classSociety   String?
+  classNumber    String?
+  classStatus    String?
+  lastSurveyDate DateTime?
+  nextSurveyDate DateTime?
+
+  yearBuilt    String?
+  builder      String?
+  loa          String?
+  breadth      String?
+  grossTonnage String?
+  netTonnage   String?
+  deadweight   String?
+  mainEngine   String?
+  generator    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  userAccess   VesselUserAccess[]
+  equipment    Equipment[]
+  tasks        MaintenanceTask[]
+  defects      Defect[]
+  documents    Document[]
+  certificates Certificate[]
+  wcrs         WorkCompletionReport[]
+}
+
+enum VesselType {
+  WORKBOAT
+  LANDING_CRAFT
+  FAST_CREW_BOAT
+  SAFETY_STANDBY
+  OFFSHORE_SUPPORT
+  TUG_BOAT
+  BARGE
+  CREW_BOAT
+}
+
+enum VesselStatus {
+  ACTIVE
+  UNDER_REPAIR
+  DOCKING
+  OFF_HIRE
+  COLD_STACK
+  MOBILIZATION
+}
+
+model VesselUserAccess {
+  id       String @id @default(cuid())
+  userId   String
+  vesselId String
+  user     User   @relation(fields: [userId], references: [id])
+  vessel   Vessel @relation(fields: [vesselId], references: [id])
+
+  @@unique([userId, vesselId])
+}
+
+// ─── Equipment ────────────────────────────────────────────────────────────────
+
+model Equipment {
+  id           String          @id @default(cuid())
+  name         String
+  system       String?
+  manufacturer String?
+  model        String?
+  serialNumber String?
+  partNumber   String?
+  description  String?
+  hoursUsed    Float?
+  status       EquipmentStatus @default(OPERATIONAL)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  vesselId String
+  vessel   Vessel @relation(fields: [vesselId], references: [id])
+
+  tasks     MaintenanceTask[]
+  defects   Defect[]
+  documents Document[]
+}
+
+enum EquipmentStatus {
+  OPERATIONAL
+  UNDER_MAINTENANCE
+  DEFECTIVE
+  DECOMMISSIONED
+}
+
+// ─── Maintenance Task ─────────────────────────────────────────────────────────
+
+model MaintenanceTask {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  taskCode    String?
+  category    String?
+  priority    Priority   @default(NORMAL)
+  status      TaskStatus @default(PENDING)
+  dueDate     DateTime?
+  dueHours    Float?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  vesselId String
+  vessel   Vessel @relation(fields: [vesselId], references: [id])
+
+  equipmentId String?
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id])
+
+  assignedToId String?
+  assignedTo   User?      @relation("AssignedTo", fields: [assignedToId], references: [id])
+
+  evidence Evidence[]
+  wcrs     WorkCompletionReport[]
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  WAITING_MATERIAL
+  WAITING_SERVICE
+  WAITING_APPROVAL
+  COMPLETED
+  VERIFIED
+  CLOSED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+// ─── Defect ───────────────────────────────────────────────────────────────────
+
+model Defect {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  severity    Severity     @default(NON_CRITICAL)
+  status      DefectStatus @default(OPEN)
+  actionTaken String?
+  remarks     String?
+  raisedAt    DateTime     @default(now())
+  closedAt    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  vesselId String
+  vessel   Vessel @relation(fields: [vesselId], references: [id])
+
+  equipmentId String?
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id])
+
+  raisedById String?
+  raisedBy   User?      @relation("RaisedBy", fields: [raisedById], references: [id])
+
+  evidence Evidence[]
+  wcrs     WorkCompletionReport[]
+}
+
+enum Severity {
+  NON_CRITICAL
+  CRITICAL
+}
+
+enum DefectStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_MATERIAL
+  WAITING_SERVICE
+  COMPLETED
+  VERIFIED
+  CLOSED
+}
+
+// ─── Evidence ─────────────────────────────────────────────────────────────────
+
+model Evidence {
+  id          String   @id @default(cuid())
+  fileName    String
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?
+  description String?
+  uploadedAt  DateTime @default(now())
+
+  taskId   String?
+  task     MaintenanceTask?      @relation(fields: [taskId], references: [id])
+
+  defectId String?
+  defect   Defect?               @relation(fields: [defectId], references: [id])
+
+  wcrId    String?
+  wcr      WorkCompletionReport? @relation(fields: [wcrId], references: [id])
+}
+
+// ─── Work Completion Report ───────────────────────────────────────────────────
+
+model WorkCompletionReport {
+  id            String    @id @default(cuid())
+  reportNumber  String    @unique
+  title         String
+  description   String?
+  workDone      String?
+  remarks       String?
+  completedDate DateTime?
+  verifiedDate  DateTime?
+  status        WCRStatus @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  vesselId String
+  vessel   Vessel @relation(fields: [vesselId], references: [id])
+
+  taskId   String?
+  task     MaintenanceTask? @relation(fields: [taskId], references: [id])
+
+  defectId String?
+  defect   Defect?  @relation(fields: [defectId], references: [id])
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  evidence Evidence[]
+}
+
+enum WCRStatus {
+  DRAFT
+  SUBMITTED
+  VERIFIED
+  CLOSED
+}
+
+// ─── Document ─────────────────────────────────────────────────────────────────
+
+model Document {
+  id          String      @id @default(cuid())
+  title       String
+  category    DocCategory @default(MANUAL)
+  fileName    String
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?
+  revision    String?
+  issueDate   DateTime?
+  expiryDate  DateTime?
+  description String?
+  uploadedAt  DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  vesselId String?
+  vessel   Vessel? @relation(fields: [vesselId], references: [id])
+
+  equipmentId String?
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id])
+}
+
+enum DocCategory {
+  MANUAL
+  PROCEDURE
+  CERTIFICATE
+  CALIBRATION
+  SERVICE_REPORT
+  SURVEY_REPORT
+  DRAWING
+  INSURANCE
+  OTHER
+}
+
+// ─── Certificate ──────────────────────────────────────────────────────────────
+
+model Certificate {
+  id           String     @id @default(cuid())
+  title        String
+  abbreviation String?
+  type         CertType   @default(CLASS)
+  status       CertStatus @default(FULL)
+  issuedDate   DateTime?
+  expiryDate   DateTime?
+  lastSurvey   DateTime?
+  nextSurvey   DateTime?
+  remarks      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  vesselId String
+  vessel   Vessel @relation(fields: [vesselId], references: [id])
+}
+
+enum CertType {
+  CLASS
+  STATUTORY
+  TRADING
+  CALIBRATION
+  OTHER
+}
+
+enum CertStatus {
+  FULL
+  CONDITIONAL
+  EXPIRED
+  SUSPENDED
+  WITHDRAWN
+}
