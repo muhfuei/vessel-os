@@ -4,11 +4,9 @@ import { useState, useTransition } from 'react'
 import { Cog, Pencil, Trash2, X } from 'lucide-react'
 import { formatStatus, statusColor } from '@/lib/utils'
 import { updateEquipmentAction, deleteEquipmentAction } from '@/app/actions/equipment'
+import { EQUIPMENT_REGISTRY, CATEGORY_KEYS } from '@/lib/equipmentRegistry'
 
 const EQUIPMENT_STATUSES = ['OPERATIONAL', 'UNDER_MAINTENANCE', 'DEFECTIVE', 'DECOMMISSIONED']
-
-// Equipment types that track running hours
-const HOURS_SYSTEMS = ['Engines', 'Generators', 'Bow Thruster', 'Pumps', 'Compressors']
 
 type EquipmentItem = {
   id: string
@@ -34,8 +32,7 @@ function EditEquipmentModal({
 }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const defaultTrack = item.hoursUsed !== null || HOURS_SYSTEMS.some(s => s.toLowerCase() === (item.system ?? '').toLowerCase())
-  const [trackHours, setTrackHours] = useState(defaultTrack)
+  const [trackHours, setTrackHours] = useState(item.hoursUsed !== null)
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -70,8 +67,14 @@ function EditEquipmentModal({
               <input name="name" required defaultValue={item.name} className="input" />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">System / Category</label>
-              <input name="system" defaultValue={item.system ?? ''} className="input" placeholder="e.g. Engines, Deck Machinery, Safety" />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+              <select name="system" defaultValue={item.system ?? ''} className="input">
+                <option value="">— Select category —</option>
+                {CATEGORY_KEYS.map(key => {
+                  const cat = EQUIPMENT_REGISTRY[key]
+                  return <option key={key} value={cat.label}>{cat.label}</option>
+                })}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Brand / Manufacturer</label>
