@@ -90,6 +90,26 @@ export async function createInspectionAction(formData: FormData) {
   return { id: inspection.id }
 }
 
+export async function updateInspectionAction(formData: FormData) {
+  await requireAuth()
+  const id = formData.get('id') as string
+  const vesselId = formData.get('vesselId') as string
+
+  await prisma.inspection.update({
+    where: { id },
+    data: {
+      inspectionType: formData.get('inspectionType') as never,
+      inspectorName: (formData.get('inspectorName') as string) || null,
+      inspectorRole: (formData.get('inspectorRole') as string) || null,
+      inspectionDate: new Date(formData.get('inspectionDate') as string),
+      port: (formData.get('port') as string) || null,
+      remarks: (formData.get('remarks') as string) || null,
+    },
+  })
+  revalidatePath(`/vessels/${vesselId}/certificates`)
+  return { success: true }
+}
+
 export async function closeInspectionAction(id: string, vesselId: string) {
   await requireAuth()
   await prisma.inspection.update({ where: { id }, data: { status: 'CLOSED' } })
