@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import TaskStatusUpdater from '@/components/tasks/TaskStatusUpdater'
 import EvidenceUploader from '@/components/EvidenceUploader'
+import TaskEditButton from '@/components/tasks/TaskEditButton'
 
 export default async function TaskDetailPage({
   params,
@@ -16,18 +17,25 @@ export default async function TaskDetailPage({
   const session = await getSession()
   if (!session) return null
 
-  const task = await prisma.maintenanceTask.findUnique({
-    where: { id: taskId },
-    include: {
-      vessel: { select: { name: true } },
-      equipment: { select: { name: true } },
-      assignedTo: { select: { name: true, position: true } },
-      evidence: { orderBy: { uploadedAt: 'desc' } },
-      wcrs: { select: { id: true, reportNumber: true, title: true, status: true, createdAt: true } },
-    },
-  })
+  const [task, equipment, users] = await Promise.all([
+    prisma.maintenanceTask.findUnique({
+      where: { id: taskId },
+      include: {
+        vessel: { select: { name: true } },
+        equipment: { select: { name: true } },
+        assignedTo: { select: { name: true, position: true } },
+        evidence: { orderBy: { uploadedAt: 'desc' } },
+        wcrs: { select: { id: true, reportNumber: true, title: true, status: true, createdAt: true } },
+      },
+    }),
+    prisma.equipment.findMany({ where: { vesselId: id }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+    prisma.user.findMany({ where: { companyId: session.companyId, status: 'ACTIVE' }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+  ])
 
   if (!task) notFound()
+
+  const canEdit = session.role !== 'VIEWER'
+  const isAdmin = session.role === 'ADMIN'
 
   return (
     <div className="p-4 lg:p-6 pb-24 lg:pb-6 space-y-4">
@@ -36,18 +44,40 @@ export default async function TaskDetailPage({
           <ArrowLeft className="w-4 h-4" /> Maintenance
         </Link>
         <div className="flex items-start justify-between gap-2">
-          <div>
+          <div className="min-w-0">
             {task.taskCode && <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{task.taskCode}</span>}
             <h1 className="text-xl font-bold text-gray-900 mt-1">{task.title}</h1>
           </div>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${statusColor(task.status)}`}>
-            {formatStatus(task.status)}
-          </span>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColor(task.status)}`}>
+              {formatStatus(task.status)}
+            </span>
+            {canEdit && (
+              <TaskEditButton
+                task={{
+                  id: task.id,
+                  title: task.title,
+                  taskCode: task.taskCode,
+                  category: task.category,
+                  priority: task.priority,
+                  dueDate: task.dueDate?.toISOString() ?? null,
+                  equipmentId: task.equipmentId,
+                  assignedToId: task.assignedToId,
+                  description: task.description,
+                  notes: task.notes,
+                }}
+                vesselId={id}
+                isAdmin={isAdmin}
+                equipment={equipment}
+                users={users}
+              />
+            )}
+          </div>
         </div>
       </div>
 
       {/* Status updater */}
-      {session.role !== 'VIEWER' && (
+      {canEdit && (
         <TaskStatusUpdater taskId={taskId} vesselId={id} currentStatus={task.status} />
       )}
 
@@ -83,7 +113,7 @@ export default async function TaskDetailPage({
           <h3 className="text-sm font-semibold text-gray-700">Evidence & Photos</h3>
           <span className="text-xs text-gray-400">{task.evidence.length} file{task.evidence.length !== 1 ? 's' : ''}</span>
         </div>
-        {session.role !== 'VIEWER' && (
+        {canEdit && (
           <div className="p-4 border-b border-gray-50">
             <EvidenceUploader taskId={taskId} />
           </div>

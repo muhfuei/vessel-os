@@ -40,6 +40,39 @@ export async function createTaskAction(formData: FormData) {
   revalidatePath(`/vessels/${vesselId}/tasks`)
 }
 
+export async function updateTaskAction(formData: FormData) {
+  const session = await requireAuth()
+  const id = formData.get('id') as string
+  const vesselId = formData.get('vesselId') as string
+  await assertVesselAccess(vesselId, session.id, session.role, session.companyId)
+
+  await prisma.maintenanceTask.update({
+    where: { id },
+    data: {
+      title: formData.get('title') as string,
+      taskCode: (formData.get('taskCode') as string) || null,
+      category: (formData.get('category') as string) || null,
+      priority: (formData.get('priority') as string || 'NORMAL') as never,
+      dueDate: formData.get('dueDate') ? new Date(formData.get('dueDate') as string) : null,
+      equipmentId: (formData.get('equipmentId') as string) || null,
+      assignedToId: (formData.get('assignedToId') as string) || null,
+      description: (formData.get('description') as string) || null,
+      notes: (formData.get('notes') as string) || null,
+    },
+  })
+  revalidatePath(`/vessels/${vesselId}/tasks`)
+  revalidatePath(`/vessels/${vesselId}/tasks/${id}`)
+  return { success: true }
+}
+
+export async function deleteTaskAction(id: string, vesselId: string) {
+  const session = await requireAuth()
+  if (session.role !== 'ADMIN') throw new Error('Admin only')
+  await prisma.maintenanceTask.delete({ where: { id } })
+  revalidatePath(`/vessels/${vesselId}/tasks`)
+  return { success: true }
+}
+
 export async function updateTaskStatusAction(taskId: string, status: string, vesselId: string) {
   const session = await requireAuth()
   await assertVesselAccess(vesselId, session.id, session.role, session.companyId)
