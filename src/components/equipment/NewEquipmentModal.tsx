@@ -101,9 +101,6 @@ export default function NewEquipmentModal({ vesselId }: { vesselId: string }) {
                     )
                   })}
                 </select>
-                {category && (
-                  <p className="text-xs text-blue-600 mt-1">Regulation: {category.regulation}</p>
-                )}
               </div>
 
               {/* Step 2 — Equipment Type */}
