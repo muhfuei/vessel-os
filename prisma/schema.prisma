@@ -99,6 +99,8 @@ model Vessel {
   defects      Defect[]
   documents    Document[]
   certificates Certificate[]
+  surveys      Survey[]
+  inspections  Inspection[]
   wcrs         WorkCompletionReport[]
 }
 
@@ -384,4 +386,119 @@ enum CertStatus {
   EXPIRED
   SUSPENDED
   WITHDRAWN
+}
+
+// ─── Survey ───────────────────────────────────────────────────────────────────
+
+model Survey {
+  id            String       @id @default(cuid())
+  type          SurveyType
+  status        SurveyStatus @default(DUE)
+  dueDate       DateTime?
+  completedDate DateTime?
+  surveyor      String?
+  surveySociety String?
+  place         String?
+  remarks       String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  vesselId String
+  vessel   Vessel @relation(fields: [vesselId], references: [id])
+}
+
+enum SurveyType {
+  ANNUAL
+  INTERMEDIATE
+  SPECIAL
+  DOCKING
+  CONTINUOUS
+  RENEWAL
+}
+
+enum SurveyStatus {
+  DUE
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+// ─── Inspection ───────────────────────────────────────────────────────────────
+
+model Inspection {
+  id             String           @id @default(cuid())
+  inspectionType InspectionType
+  inspectorName  String?
+  inspectorRole  String?
+  inspectionDate DateTime
+  port           String?
+  status         InspectionStatus @default(OPEN)
+  remarks        String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  vesselId     String
+  vessel       Vessel             @relation(fields: [vesselId], references: [id])
+  deficiencies DeficiencyReport[]
+  punchItems   PunchListItem[]
+}
+
+enum InspectionType {
+  CLIENT_VETTING
+  INTERNAL_SUPERINTENDENT
+  PRE_PSC
+  PORT_STATE_CONTROL
+  FLAG_STATE
+  ISM_AUDIT
+  CLASS_SURVEY
+}
+
+enum InspectionStatus {
+  OPEN
+  CLOSED
+}
+
+model DeficiencyReport {
+  id               String     @id @default(cuid())
+  code             String
+  system           String
+  description      String
+  regulatoryRef    String?
+  riskLevel        RiskLevel  @default(MEDIUM)
+  correctiveAction String?
+  status           ItemStatus @default(OPEN)
+  closedAt         DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  inspectionId String
+  inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+}
+
+model PunchListItem {
+  id          String     @id @default(cuid())
+  code        String
+  location    String?
+  description String
+  department  String
+  priority    Priority   @default(NORMAL)
+  status      ItemStatus @default(OPEN)
+  closedAt    DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  inspectionId String
+  inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+}
+
+enum RiskLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ItemStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
 }
