@@ -38,30 +38,38 @@ export function urgencyLabel(days: number | null): string {
 
 export function statusColor(status: string): string {
   const map: Record<string, string> = {
-    PENDING: 'bg-gray-100 text-gray-700',
-    IN_PROGRESS: 'bg-blue-100 text-blue-700',
-    WAITING_MATERIAL: 'bg-yellow-100 text-yellow-800',
-    WAITING_SERVICE: 'bg-yellow-100 text-yellow-800',
-    WAITING_APPROVAL: 'bg-purple-100 text-purple-700',
-    COMPLETED: 'bg-green-100 text-green-700',
-    VERIFIED: 'bg-emerald-100 text-emerald-700',
-    CLOSED: 'bg-slate-100 text-slate-600',
-    CANCELLED: 'bg-red-50 text-red-500',
-    OPEN: 'bg-red-100 text-red-700',
-    DRAFT: 'bg-gray-100 text-gray-600',
-    SUBMITTED: 'bg-blue-100 text-blue-700',
-    ACTIVE: 'bg-green-100 text-green-700',
-    UNDER_REPAIR: 'bg-orange-100 text-orange-700',
-    DOCKING: 'bg-blue-100 text-blue-700',
-    OFF_HIRE: 'bg-gray-100 text-gray-600',
-    COLD_STACK: 'bg-slate-100 text-slate-600',
-    MOBILIZATION: 'bg-purple-100 text-purple-700',
-    FULL: 'bg-green-100 text-green-700',
-    EXPIRED: 'bg-red-100 text-red-700',
-    CRITICAL: 'bg-red-100 text-red-700',
-    NON_CRITICAL: 'bg-yellow-100 text-yellow-700',
+    // Task / defect workflow
+    PENDING:          'bg-slate-100 text-slate-600',
+    IN_PROGRESS:      'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+    WAITING_MATERIAL: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+    WAITING_SERVICE:  'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+    WAITING_APPROVAL: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
+    COMPLETED:        'bg-green-50 text-green-700 ring-1 ring-green-200',
+    VERIFIED:         'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+    CLOSED:           'bg-slate-100 text-slate-500',
+    CANCELLED:        'bg-slate-50 text-slate-400',
+    OPEN:             'bg-red-50 text-red-700 ring-1 ring-red-200',
+    DRAFT:            'bg-slate-100 text-slate-500',
+    SUBMITTED:        'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+    // Vessel status
+    ACTIVE:           'bg-green-50 text-green-700 ring-1 ring-green-200',
+    UNDER_REPAIR:     'bg-orange-50 text-orange-700 ring-1 ring-orange-200',
+    DOCKING:          'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+    OFF_HIRE:         'bg-slate-100 text-slate-500',
+    COLD_STACK:       'bg-slate-100 text-slate-500',
+    MOBILIZATION:     'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
+    // Certificates
+    FULL:             'bg-green-50 text-green-700 ring-1 ring-green-200',
+    EXPIRED:          'bg-red-100 text-red-700 ring-1 ring-red-300',
+    // Severity — CRITICAL is intentionally stronger than other reds
+    CRITICAL:         'bg-red-100 text-red-800 ring-1 ring-red-400 font-semibold',
+    NON_CRITICAL:     'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+    // Roles
+    ADMIN:            'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
+    USER:             'bg-blue-50 text-blue-700',
+    VIEWER:           'bg-slate-100 text-slate-500',
   }
-  return map[status] ?? 'bg-gray-100 text-gray-600'
+  return map[status] ?? 'bg-slate-100 text-slate-500'
 }
 
 export function formatStatus(status: string): string {

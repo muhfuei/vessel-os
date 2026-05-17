@@ -1,15 +1,57 @@
 @import "tailwindcss";
 
+@theme {
+  /* Brand — maritime steel blue, not generic SaaS blue */
+  --color-brand:        oklch(0.42 0.14 224);
+  --color-brand-hover:  oklch(0.37 0.14 224);
+  --color-brand-subtle: oklch(0.96 0.02 224);
+
+  /* Tinted neutrals — slight slate lean, not pure gray */
+  --color-surface:      oklch(0.985 0.004 224);
+  --color-border:       oklch(0.91 0.006 224);
+  --color-border-muted: oklch(0.95 0.004 224);
+
+  --color-text-primary:   oklch(0.18 0.012 224);
+  --color-text-secondary: oklch(0.46 0.010 224);
+  --color-text-muted:     oklch(0.62 0.008 224);
+}
+
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   -webkit-tap-highlight-color: transparent;
+  background-color: var(--color-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @layer components {
   .input {
-    @apply w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white;
+    @apply w-full px-3 py-2.5 rounded-lg text-sm bg-white;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-brand);
+      box-shadow: 0 0 0 3px oklch(0.42 0.14 224 / 0.14);
+    }
   }
 }

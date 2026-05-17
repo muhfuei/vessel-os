@@ -67,17 +67,19 @@ export default async function DashboardPage() {
           <Link
             key={label}
             href={href}
-            className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+            className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-150"
           >
-            <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg mb-3 ${
-              color === 'blue' ? 'bg-blue-100' : color === 'red' ? 'bg-red-100' : 'bg-orange-100'
-            }`}>
-              <Icon className={`w-5 h-5 ${
-                color === 'blue' ? 'text-blue-600' : color === 'red' ? 'text-red-600' : 'text-orange-600'
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide leading-none">{label}</p>
+              <Icon className={`w-4 h-4 flex-shrink-0 ${
+                color === 'blue' ? 'text-blue-400' : color === 'red' ? 'text-red-400' : 'text-orange-400'
               }`} />
             </div>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+            <p className={`text-3xl font-bold tabular-nums ${
+              color === 'red' && value > 0 ? 'text-red-600' :
+              color === 'orange' && value > 0 ? 'text-orange-600' :
+              'text-gray-900'
+            }`}>{value}</p>
           </Link>
         ))}
       </div>
@@ -107,7 +109,10 @@ export default async function DashboardPage() {
               </Link>
             ))}
             {vessels.length === 0 && (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">No vessels yet</p>
+              <div className="px-4 py-8 text-center">
+                <Ship className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">No vessels added yet</p>
+              </div>
             )}
           </div>
         </div>
@@ -139,7 +144,10 @@ export default async function DashboardPage() {
               )
             })}
             {upcomingTasks.length === 0 && (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">No tasks due in 30 days</p>
+              <div className="px-4 py-8 text-center">
+                <CheckCircle className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">All clear — nothing due in 30 days</p>
+              </div>
             )}
           </div>
         </div>
