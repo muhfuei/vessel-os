@@ -49,19 +49,31 @@ export async function updateUserAction(formData: FormData) {
   const session = await requireAdmin()
 
   const id = formData.get('id') as string
+  const name = (formData.get('name') as string).trim()
+  const email = (formData.get('email') as string).trim().toLowerCase()
   const role = formData.get('role') as string
   const status = formData.get('status') as string
   const position = (formData.get('position') as string | null)?.trim() || null
   const department = (formData.get('department') as string | null)?.trim() || null
   const vesselIds = formData.getAll('vesselIds') as string[]
 
+  if (!name || !email) return { error: 'Name and email are required.' }
+
   const user = await prisma.user.findFirst({ where: { id, companyId: session.companyId } })
   if (!user) return { error: 'User not found.' }
+
+  // Check email uniqueness if changed
+  if (email !== user.email) {
+    const existing = await prisma.user.findUnique({ where: { email } })
+    if (existing) return { error: 'That email is already in use.' }
+  }
 
   await prisma.$transaction([
     prisma.user.update({
       where: { id },
       data: {
+        name,
+        email,
         role: role as 'ADMIN' | 'USER' | 'VIEWER',
         status: status as 'ACTIVE' | 'INACTIVE',
         position: position || undefined,

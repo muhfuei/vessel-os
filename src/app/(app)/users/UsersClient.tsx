@@ -144,6 +144,14 @@ function EditUserModal({ user, vessels, onClose }: { user: UserRow; vessels: Ves
           <input type="hidden" name="id" value={user.id} />
 
           <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
+              <input name="name" required defaultValue={user.name} className="input" placeholder="Ahmad Razif" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+              <input name="email" type="email" required defaultValue={user.email} className="input" placeholder="ahmad@company.com" />
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
               <select name="role" defaultValue={user.role} className="input">
