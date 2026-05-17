@@ -91,7 +91,7 @@ export default function NewEquipmentModal({ vesselId }: { vesselId: string }) {
                   className="input"
                   required
                 >
-                  <option value="">— Select IMO category —</option>
+                  <option value="">— Select category —</option>
                   {CATEGORY_KEYS.map(key => {
                     const cat = EQUIPMENT_REGISTRY[key]
                     return (
