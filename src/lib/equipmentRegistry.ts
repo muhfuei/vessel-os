@@ -1,0 +1,206 @@
+/**
+ * IMO / SOLAS compliant equipment registry
+ * Category → equipment types with running hours flag
+ */
+
+export type EquipmentType = {
+  name: string
+  trackHours: boolean
+}
+
+export type EquipmentCategory = {
+  label: string
+  regulation: string
+  types: EquipmentType[]
+}
+
+export const EQUIPMENT_REGISTRY: Record<string, EquipmentCategory> = {
+  LSA: {
+    label: 'Life-Saving Appliances (LSA)',
+    regulation: 'SOLAS Ch. III',
+    types: [
+      { name: 'Totally Enclosed Lifeboat', trackHours: false },
+      { name: 'Free-Fall Lifeboat', trackHours: false },
+      { name: 'Inflatable Liferaft', trackHours: false },
+      { name: 'Rigid Liferaft', trackHours: false },
+      { name: 'Fast Rescue Boat', trackHours: false },
+      { name: 'Davit', trackHours: false },
+      { name: 'Launching Winch', trackHours: false },
+      { name: 'Marine Evacuation System (MES)', trackHours: false },
+      { name: 'Embarkation Ladder', trackHours: false },
+      { name: 'Lifejacket', trackHours: false },
+      { name: 'Immersion Suit', trackHours: false },
+      { name: 'Anti-Exposure Suit', trackHours: false },
+      { name: 'Thermal Protective Aid (TPA)', trackHours: false },
+      { name: 'Lifebuoy', trackHours: false },
+      { name: 'Rocket Parachute Flare', trackHours: false },
+      { name: 'Hand Flare', trackHours: false },
+      { name: 'Buoyant Smoke Signal', trackHours: false },
+      { name: 'Line-Throwing Appliance', trackHours: false },
+      { name: 'EPIRB', trackHours: false },
+      { name: 'SART (Search & Rescue Transponder)', trackHours: false },
+      { name: 'Two-Way VHF Radiotelephone', trackHours: false },
+    ],
+  },
+  FFA: {
+    label: 'Fire Fighting Appliances (FFA)',
+    regulation: 'SOLAS Ch. II-2 / FSS Code',
+    types: [
+      { name: 'Fire Alarm Panel', trackHours: false },
+      { name: 'Smoke Detector', trackHours: false },
+      { name: 'Heat Detector', trackHours: false },
+      { name: 'Flame Detector', trackHours: false },
+      { name: 'CO2 Fixed Fire System', trackHours: false },
+      { name: 'FM-200 Fixed Fire System', trackHours: false },
+      { name: 'Novec 1230 Fixed Fire System', trackHours: false },
+      { name: 'Water Mist System', trackHours: false },
+      { name: 'High-Expansion Foam System', trackHours: false },
+      { name: 'Low-Expansion Foam System', trackHours: false },
+      { name: 'Fire Main Pump', trackHours: true },
+      { name: 'Emergency Fire Pump', trackHours: true },
+      { name: 'Fire Hydrant', trackHours: false },
+      { name: 'Fire Hose & Nozzle', trackHours: false },
+      { name: 'International Shore Connection', trackHours: false },
+      { name: 'CO2 Portable Extinguisher', trackHours: false },
+      { name: 'Dry Powder Extinguisher', trackHours: false },
+      { name: 'Foam Extinguisher', trackHours: false },
+      { name: "Firefighter's Outfit", trackHours: false },
+      { name: 'Self-Contained Breathing Apparatus (SCBA)', trackHours: false },
+      { name: 'Emergency Escape Breathing Device (EEBD)', trackHours: false },
+    ],
+  },
+  NAV: {
+    label: 'Navigation & Communication',
+    regulation: 'SOLAS Ch. IV & V',
+    types: [
+      { name: 'X-Band Radar (ARPA)', trackHours: false },
+      { name: 'S-Band Radar (ARPA)', trackHours: false },
+      { name: 'ECDIS (Primary)', trackHours: false },
+      { name: 'ECDIS (Backup)', trackHours: false },
+      { name: 'GPS Receiver', trackHours: false },
+      { name: 'Gyrocompass', trackHours: false },
+      { name: 'Magnetic Compass', trackHours: false },
+      { name: 'Speed Log (Doppler)', trackHours: false },
+      { name: 'Echo Sounder', trackHours: false },
+      { name: 'AIS Transponder (Class A)', trackHours: false },
+      { name: 'Voyage Data Recorder (VDR)', trackHours: false },
+      { name: 'Simplified VDR (S-VDR)', trackHours: false },
+      { name: 'Inmarsat C Terminal', trackHours: false },
+      { name: 'MF/HF Radio', trackHours: false },
+      { name: 'VHF DSC Radio', trackHours: false },
+      { name: 'NAVTEX Receiver', trackHours: false },
+      { name: 'Bridge Navigational Watch Alarm System (BNWAS)', trackHours: false },
+      { name: 'Sound Reception System', trackHours: false },
+    ],
+  },
+  MARPOL: {
+    label: 'Marine Pollution Prevention (MARPOL)',
+    regulation: 'MARPOL Annexes I–VI',
+    types: [
+      { name: 'Oily Water Separator (OWS)', trackHours: true },
+      { name: 'Oil Content Monitor / 15-ppm Bilge Alarm', trackHours: false },
+      { name: 'Sewage Treatment Plant', trackHours: true },
+      { name: 'Incinerator', trackHours: false },
+      { name: 'Ballast Water Management System (BWMS)', trackHours: true },
+      { name: 'Exhaust Gas Cleaning System / Scrubber', trackHours: false },
+      { name: 'Oil Discharge Monitoring Equipment (ODME)', trackHours: false },
+    ],
+  },
+  PROPULSION: {
+    label: 'Propulsion & Main Machinery',
+    regulation: 'Class / Flag State',
+    types: [
+      { name: 'Main Engine', trackHours: true },
+      { name: 'Reduction Gearbox', trackHours: true },
+      { name: 'Controllable Pitch Propeller (CPP)', trackHours: true },
+      { name: 'Fixed Pitch Propeller (FPP)', trackHours: false },
+      { name: 'Bow Thruster Engine', trackHours: true },
+      { name: 'Stern Thruster Engine', trackHours: true },
+      { name: 'Shaft Seal', trackHours: false },
+      { name: 'Stern Tube', trackHours: false },
+    ],
+  },
+  AUXILIARY: {
+    label: 'Auxiliary Machinery',
+    regulation: 'Class / Flag State',
+    types: [
+      { name: 'Generator Engine', trackHours: true },
+      { name: 'Emergency Generator', trackHours: true },
+      { name: 'Air Compressor', trackHours: true },
+      { name: 'Fuel Oil Purifier', trackHours: true },
+      { name: 'Lube Oil Purifier', trackHours: true },
+      { name: 'Fresh Water Generator', trackHours: true },
+      { name: 'Hydraulic Power Pack', trackHours: true },
+      { name: 'Bilge Pump', trackHours: true },
+      { name: 'General Service Pump', trackHours: true },
+      { name: 'Fuel Transfer Pump', trackHours: true },
+      { name: 'Cooling Water Pump', trackHours: true },
+      { name: 'Heat Exchanger / Cooler', trackHours: false },
+      { name: 'Fuel Oil Tank', trackHours: false },
+      { name: 'Lube Oil Tank', trackHours: false },
+    ],
+  },
+  DECK: {
+    label: 'Deck Machinery & Cargo Handling',
+    regulation: 'SOLAS / Class',
+    types: [
+      { name: 'Mooring Winch', trackHours: true },
+      { name: 'Anchor Windlass', trackHours: true },
+      { name: 'Combined Windlass / Mooring Winch', trackHours: true },
+      { name: 'Capstan', trackHours: true },
+      { name: 'Cargo Crane', trackHours: true },
+      { name: 'Provision Crane', trackHours: true },
+      { name: 'Deck Crane (Hydraulic)', trackHours: true },
+      { name: 'Derrick', trackHours: false },
+      { name: 'Hatch Cover (Hydraulic)', trackHours: false },
+      { name: 'Hatch Cover (Mechanical)', trackHours: false },
+      { name: 'Anchor', trackHours: false },
+      { name: 'Anchor Chain', trackHours: false },
+      { name: 'Mooring Line', trackHours: false },
+      { name: 'Inert Gas System (IGS)', trackHours: false },
+    ],
+  },
+  HULL: {
+    label: 'Hull, Structural & Safety Systems',
+    regulation: 'SOLAS / Class',
+    types: [
+      { name: 'Watertight Door (Hydraulic)', trackHours: false },
+      { name: 'Watertight Door (Manual)', trackHours: false },
+      { name: 'Weathertight Door', trackHours: false },
+      { name: 'Bilge System', trackHours: false },
+      { name: 'Ballast System', trackHours: false },
+      { name: 'Steering Gear', trackHours: true },
+      { name: 'Rudder', trackHours: false },
+      { name: 'Stabilizer', trackHours: true },
+      { name: 'Ship Side Valve', trackHours: false },
+      { name: 'Sea Chest', trackHours: false },
+    ],
+  },
+  HVAC: {
+    label: 'HVAC & Accommodation',
+    regulation: 'MLC / Flag State',
+    types: [
+      { name: 'Air Conditioning Unit', trackHours: true },
+      { name: 'Air Handling Unit (AHU)', trackHours: true },
+      { name: 'Ventilation Fan', trackHours: true },
+      { name: 'Refrigeration Unit', trackHours: true },
+      { name: 'Provision Refrigerator', trackHours: false },
+    ],
+  },
+  ELECTRICAL: {
+    label: 'Electrical & Instrumentation',
+    regulation: 'Class / Flag State',
+    types: [
+      { name: 'Main Switchboard', trackHours: false },
+      { name: 'Emergency Switchboard', trackHours: false },
+      { name: 'UPS System', trackHours: false },
+      { name: 'Battery Bank', trackHours: false },
+      { name: 'Transformer', trackHours: false },
+      { name: 'Motor Control Centre (MCC)', trackHours: false },
+      { name: 'Integrated Automation System (IAS)', trackHours: false },
+      { name: 'Telegraph / Engine Order Telegraph', trackHours: false },
+    ],
+  },
+}
+
+export const CATEGORY_KEYS = Object.keys(EQUIPMENT_REGISTRY)

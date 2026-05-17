@@ -58,6 +58,9 @@ export async function createEquipmentAction(formData: FormData) {
 
   await assertVesselAccess(vesselId, session.id, session.role, session.companyId)
 
+  const trackHours = formData.get('trackHours') === 'true'
+  const hoursRaw = formData.get('hoursUsed') as string
+
   await prisma.equipment.create({
     data: {
       name: formData.get('name') as string,
@@ -67,6 +70,7 @@ export async function createEquipmentAction(formData: FormData) {
       serialNumber: (formData.get('serialNumber') as string) || null,
       partNumber: (formData.get('partNumber') as string) || null,
       description: (formData.get('description') as string) || null,
+      hoursUsed: trackHours && hoursRaw ? parseFloat(hoursRaw) : null,
       status: 'OPERATIONAL',
       vesselId,
     },
