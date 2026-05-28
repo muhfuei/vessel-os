@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Anchor, Building2, LayoutDashboard, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { logoutAction } from '@/app/actions/auth'
+import ChangePasswordButton from './ChangePasswordButton'
 
 const NAV = [
   { href: '/super-admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -51,6 +52,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
             <p className="text-white text-sm font-medium truncate">{session.name}</p>
             <p className="text-slate-500 text-xs truncate">{session.email}</p>
           </div>
+          <ChangePasswordButton />
           <form action={logoutAction}>
             <button
               type="submit"

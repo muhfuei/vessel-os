@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 
-async function assertVesselAccess(vesselId: string, userId: string, role: string, companyId: string) {
+async function assertVesselAccess(vesselId: string, userId: string, role: string, companyId: string | null) {
+  if (!companyId) throw new Error('No company access')
   if (role === 'ADMIN') {
     const vessel = await prisma.vessel.findFirst({ where: { id: vesselId, companyId } })
     if (!vessel) throw new Error('Vessel not found')
@@ -22,11 +23,13 @@ export async function updateEquipmentAction(formData: FormData) {
 
   const id = formData.get('id') as string
   const vesselId = formData.get('vesselId') as string
+  await assertVesselAccess(vesselId, session.id, session.role, session.companyId)
+
   const trackHours = formData.get('trackHours') === 'true'
   const hoursRaw = formData.get('hoursUsed') as string
 
-  await prisma.equipment.update({
-    where: { id },
+  await prisma.equipment.updateMany({
+    where: { id, vesselId },
     data: {
       name: (formData.get('name') as string).trim(),
       system: (formData.get('system') as string)?.trim() || null,
@@ -46,8 +49,9 @@ export async function updateEquipmentAction(formData: FormData) {
 export async function deleteEquipmentAction(id: string, vesselId: string) {
   const session = await requireAuth()
   if (session.role !== 'ADMIN') throw new Error('Only administrators can delete equipment')
+  await assertVesselAccess(vesselId, session.id, session.role, session.companyId)
 
-  await prisma.equipment.delete({ where: { id } })
+  await prisma.equipment.deleteMany({ where: { id, vesselId } })
   revalidatePath(`/vessels/${vesselId}/equipment`)
   return { success: true }
 }

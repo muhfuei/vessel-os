@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/app/actions/auth'
@@ -14,8 +15,10 @@ import {
   FolderOpen,
   Users,
   LogOut,
+  KeyRound,
 } from 'lucide-react'
 import type { SessionUser } from '@/lib/auth'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 const navItems = [
   { href: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
@@ -29,6 +32,7 @@ const navItems = [
 
 export default function Sidebar({ user }: { user: SessionUser }) {
   const pathname = usePathname()
+  const [showChangePw, setShowChangePw] = useState(false)
 
   return (
     <>
@@ -78,6 +82,13 @@ export default function Sidebar({ user }: { user: SessionUser }) {
               {user.role}
             </span>
           </div>
+          <button
+            onClick={() => setShowChangePw(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition-colors duration-150"
+          >
+            <KeyRound className="w-4 h-4" />
+            Change Password
+          </button>
           <form action={logoutAction}>
             <button
               type="submit"
@@ -89,6 +100,8 @@ export default function Sidebar({ user }: { user: SessionUser }) {
           </form>
         </div>
       </aside>
+
+      {showChangePw && <ChangePasswordModal onClose={() => setShowChangePw(false)} />}
 
       {/* Mobile bottom nav — min 44px touch targets */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 flex">

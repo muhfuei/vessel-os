@@ -3,10 +3,10 @@ import { cookies } from 'next/headers'
 import { prisma } from './db'
 
 const jwtSecret = process.env.JWT_SECRET
-if (!jwtSecret && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET environment variable is required in production')
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET environment variable is not set')
 }
-const secret = new TextEncoder().encode(jwtSecret ?? 'vessel-os-dev-secret-not-for-production')
+const secret = new TextEncoder().encode(jwtSecret)
 
 const COOKIE_NAME = 'vessel_os_session'
 

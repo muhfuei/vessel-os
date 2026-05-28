@@ -39,9 +39,12 @@ export async function updateCertificateAction(formData: FormData) {
   if (session.role !== 'ADMIN') throw new Error('Admin only')
   const id = formData.get('id') as string
   const vesselId = formData.get('vesselId') as string
+  if (!session.companyId) throw new Error('No company access')
+  const vessel = await prisma.vessel.findFirst({ where: { id: vesselId, companyId: session.companyId } })
+  if (!vessel) throw new Error('Vessel not found')
 
-  await prisma.certificate.update({
-    where: { id },
+  await prisma.certificate.updateMany({
+    where: { id, vesselId },
     data: {
       title: (formData.get('title') as string).trim(),
       abbreviation: toStr(formData.get('abbreviation')),
@@ -59,7 +62,10 @@ export async function updateCertificateAction(formData: FormData) {
 export async function deleteCertificateAction(id: string, vesselId: string) {
   const session = await requireAuth()
   if (session.role !== 'ADMIN') throw new Error('Admin only')
-  await prisma.certificate.delete({ where: { id } })
+  if (!session.companyId) throw new Error('No company access')
+  const vessel = await prisma.vessel.findFirst({ where: { id: vesselId, companyId: session.companyId } })
+  if (!vessel) throw new Error('Vessel not found')
+  await prisma.certificate.deleteMany({ where: { id, vesselId } })
   revalidatePath(`/vessels/${vesselId}/certificates`)
   return { success: true }
 }

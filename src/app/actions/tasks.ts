@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 
-async function assertVesselAccess(vesselId: string, userId: string, role: string, companyId: string) {
+async function assertVesselAccess(vesselId: string, userId: string, role: string, companyId: string | null) {
+  if (!companyId) throw new Error('No company access')
   if (role === 'ADMIN') {
     const vessel = await prisma.vessel.findFirst({ where: { id: vesselId, companyId } })
     if (!vessel) throw new Error('Vessel not found')
@@ -47,7 +48,7 @@ export async function updateTaskAction(formData: FormData) {
   await assertVesselAccess(vesselId, session.id, session.role, session.companyId)
 
   await prisma.maintenanceTask.update({
-    where: { id },
+    where: { id, vesselId },
     data: {
       title: formData.get('title') as string,
       taskCode: (formData.get('taskCode') as string) || null,
@@ -68,7 +69,8 @@ export async function updateTaskAction(formData: FormData) {
 export async function deleteTaskAction(id: string, vesselId: string) {
   const session = await requireAuth()
   if (session.role !== 'ADMIN') throw new Error('Admin only')
-  await prisma.maintenanceTask.delete({ where: { id } })
+  await assertVesselAccess(vesselId, session.id, session.role, session.companyId)
+  await prisma.maintenanceTask.deleteMany({ where: { id, vesselId } })
   revalidatePath(`/vessels/${vesselId}/tasks`)
   return { success: true }
 }

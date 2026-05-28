@@ -222,7 +222,7 @@ export default function CompaniesClient({ companies }: { companies: Company[] })
                   {c._count.vessels} vessel{c._count.vessels !== 1 ? 's' : ''}
                 </span>
                 <span className="text-slate-600">
-                  Created {new Date(c.createdAt).toLocaleDateString()}
+                  Created {new Date(c.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
               </div>
 
