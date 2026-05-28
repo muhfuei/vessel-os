@@ -3,7 +3,14 @@
 import { useState, useTransition } from 'react'
 import { Users, Plus, X, Pencil, Trash2, ShieldCheck, Eye, User } from 'lucide-react'
 import { createUserAction, updateUserAction, deleteUserAction } from '@/app/actions/users'
-import { POSITIONS, POSITION_GROUPS } from '@/lib/positionHierarchy'
+import {
+  POSITIONS,
+  DEPARTMENTS,
+  ALL_DOMAINS,
+  DOMAIN_LABELS,
+  getDefaultDomain,
+  type OperationalDomain,
+} from '@/lib/operationalDomains'
 
 type Vessel = { id: string; name: string }
 type UserRow = {
@@ -12,6 +19,7 @@ type UserRow = {
   email: string
   position: string | null
   department: string | null
+  operationalDomain: string | null
   role: string
   status: string
   vesselAccess: { vessel: Vessel; vesselId: string }[]
@@ -28,6 +36,16 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   ADMIN: <ShieldCheck className="w-3 h-3" />,
   USER: <User className="w-3 h-3" />,
   VIEWER: <Eye className="w-3 h-3" />,
+}
+
+const DOMAIN_COLORS: Record<string, string> = {
+  MANAGEMENT:        'bg-violet-100 text-violet-700',
+  TECHNICAL:         'bg-blue-100 text-blue-700',
+  MARINE_OPERATIONS: 'bg-cyan-100 text-cyan-700',
+  PURCHASING:        'bg-amber-100 text-amber-700',
+  HR:                'bg-pink-100 text-pink-700',
+  SHIPYARD:          'bg-orange-100 text-orange-700',
+  ADMIN:             'bg-gray-100 text-gray-600',
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -47,10 +65,73 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+function DomainBadge({ domain }: { domain: string | null }) {
+  if (!domain) return null
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DOMAIN_COLORS[domain] ?? 'bg-gray-100 text-gray-600'}`}>
+      {DOMAIN_LABELS[domain as OperationalDomain] ?? domain}
+    </span>
+  )
+}
+
+// ── Shared Position / Department / Domain selectors ───────────────────────────
+
+function PositionSelect({ defaultValue, onChange }: { defaultValue?: string; onChange?: (val: string) => void }) {
+  return (
+    <select
+      name="position"
+      defaultValue={defaultValue ?? ''}
+      className="input"
+      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+    >
+      <option value="">— Select position —</option>
+      {DEPARTMENTS.map((dept) => {
+        const entries = POSITIONS.filter((p) => p.department === dept)
+        if (!entries.length) return null
+        return (
+          <optgroup key={dept} label={dept}>
+            {entries.map((p) => (
+              <option key={p.label} value={p.label}>{p.label}</option>
+            ))}
+          </optgroup>
+        )
+      })}
+    </select>
+  )
+}
+
+function DepartmentSelect({ defaultValue }: { defaultValue?: string }) {
+  return (
+    <select name="department" defaultValue={defaultValue ?? ''} className="input">
+      <option value="">— Select department —</option>
+      {DEPARTMENTS.map((d) => (
+        <option key={d} value={d}>{d}</option>
+      ))}
+    </select>
+  )
+}
+
+function DomainSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  return (
+    <select name="operationalDomain" value={value} className="input" onChange={(e) => onChange(e.target.value)}>
+      <option value="">— Select domain —</option>
+      {ALL_DOMAINS.map((d) => (
+        <option key={d} value={d}>{DOMAIN_LABELS[d]}</option>
+      ))}
+    </select>
+  )
+}
+
 // ── Add User Modal ────────────────────────────────────────────────────────────
 function AddUserModal({ onClose }: { onClose: () => void }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [domain, setDomain] = useState('')
+
+  function handlePositionChange(pos: string) {
+    const suggested = getDefaultDomain(pos)
+    if (suggested) setDomain(suggested)
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -64,51 +145,64 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="font-semibold text-gray-900">Add User</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
-              <input name="name" required className="input" placeholder="Ahmad Razif" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
-              <input name="email" type="email" required className="input" placeholder="ahmad@company.com" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Password * (min. 6 chars)</label>
-              <input name="password" type="password" required minLength={6} className="input" placeholder="••••••••" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Role *</label>
-              <select name="role" required className="input">
-                {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Position</label>
-              <select name="position" className="input">
-                <option value="">— Select position —</option>
-                {POSITION_GROUPS.map((group) => (
-                  <optgroup key={group} label={group}>
-                    {POSITIONS.filter((p) => p.group === group).map((p) => (
-                      <option key={p.label} value={p.label}>{p.label}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-3">
+          {/* Identity */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
+            <input name="name" required className="input" placeholder="Ahmad Razif" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+            <input name="email" type="email" required className="input" placeholder="ahmad@company.com" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Password * (min. 6 chars)</label>
+            <input name="password" type="password" required minLength={6} className="input" placeholder="••••••••" />
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+          {/* System role */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">System Role *</label>
+            <select name="role" required className="input">
+              {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+            </select>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* Org profile */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Position</label>
+            <PositionSelect onChange={handlePositionChange} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
+            <DepartmentSelect />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Operational Domain
+              <span className="ml-1 text-gray-400 font-normal">(auto-suggested from position)</span>
+            </label>
+            <DomainSelect value={domain} onChange={setDomain} />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+          )}
 
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
             <button type="submit" disabled={pending} className="flex-1 py-2 rounded-lg bg-blue-700 text-sm font-medium text-white hover:bg-blue-800 transition-colors disabled:opacity-50">
               {pending ? 'Adding…' : 'Add User'}
             </button>
@@ -123,7 +217,13 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
 function EditUserModal({ user, vessels, onClose }: { user: UserRow; vessels: Vessel[]; onClose: () => void }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [domain, setDomain] = useState(user.operationalDomain ?? '')
   const currentVesselIds = user.vesselAccess.map((va) => va.vesselId)
+
+  function handlePositionChange(pos: string) {
+    const suggested = getDefaultDomain(pos)
+    if (suggested) setDomain(suggested)
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -137,29 +237,34 @@ function EditUserModal({ user, vessels, onClose }: { user: UserRow; vessels: Ves
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <div>
             <h2 className="font-semibold text-gray-900">Edit User</h2>
             <p className="text-xs text-gray-400">{user.email}</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-3">
           <input type="hidden" name="id" value={user.id} />
 
+          {/* Identity */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
+            <input name="name" required defaultValue={user.name} className="input" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+            <input name="email" type="email" required defaultValue={user.email} className="input" />
+          </div>
+
+          {/* System role + status */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
-              <input name="name" required defaultValue={user.name} className="input" placeholder="Ahmad Razif" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
-              <input name="email" type="email" required defaultValue={user.email} className="input" placeholder="ahmad@company.com" />
-            </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">System Role</label>
               <select name="role" defaultValue={user.role} className="input">
                 {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
@@ -171,21 +276,30 @@ function EditUserModal({ user, vessels, onClose }: { user: UserRow; vessels: Ves
                 <option value="INACTIVE">Inactive</option>
               </select>
             </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Position</label>
-              <select name="position" defaultValue={user.position ?? ''} className="input">
-                <option value="">— Select position —</option>
-                {POSITION_GROUPS.map((group) => (
-                  <optgroup key={group} label={group}>
-                    {POSITIONS.filter((p) => p.group === group).map((p) => (
-                      <option key={p.label} value={p.label}>{p.label}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
           </div>
 
+          <hr className="border-gray-100" />
+
+          {/* Org profile */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Position</label>
+            <PositionSelect defaultValue={user.position ?? ''} onChange={handlePositionChange} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
+            <DepartmentSelect defaultValue={user.department ?? ''} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Operational Domain
+              <span className="ml-1 text-gray-400 font-normal">(auto-suggested from position)</span>
+            </label>
+            <DomainSelect value={domain} onChange={setDomain} />
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* Vessel access */}
           {vessels.length > 0 && (
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-2">Vessel Access</label>
@@ -206,10 +320,14 @@ function EditUserModal({ user, vessels, onClose }: { user: UserRow; vessels: Ves
             </div>
           )}
 
-          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+          )}
 
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
             <button type="submit" disabled={pending} className="flex-1 py-2 rounded-lg bg-blue-700 text-sm font-medium text-white hover:bg-blue-800 transition-colors disabled:opacity-50">
               {pending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -270,11 +388,18 @@ export default function UsersClient({
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-gray-900 text-sm truncate">{u.name}</p>
                 <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                {u.position && <p className="text-xs text-gray-400">{u.position}{u.department ? ` · ${u.department}` : ''}</p>}
+                {(u.position || u.department) && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {u.position}
+                    {u.position && u.department ? ' · ' : ''}
+                    {u.department}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 <RoleBadge role={u.role} />
                 <StatusBadge status={u.status} />
+                {u.operationalDomain && <DomainBadge domain={u.operationalDomain} />}
               </div>
             </div>
 

@@ -25,17 +25,18 @@ model Company {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id         String     @id @default(cuid())
-  name       String
-  email      String     @unique
-  password   String
-  phone      String?
-  position   String?
-  department String?
-  role       Role       @default(USER)
-  status     UserStatus @default(ACTIVE)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id                String            @id @default(cuid())
+  name              String
+  email             String            @unique
+  password          String
+  phone             String?
+  position          String?
+  department        String?
+  operationalDomain OperationalDomain?
+  role              Role              @default(USER)
+  status            UserStatus        @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
@@ -44,6 +45,16 @@ model User {
   tasksAssigned MaintenanceTask[]    @relation("AssignedTo")
   defectsRaised Defect[]             @relation("RaisedBy")
   wcrs          WorkCompletionReport[]
+}
+
+enum OperationalDomain {
+  MANAGEMENT
+  TECHNICAL
+  MARINE_OPERATIONS
+  PURCHASING
+  HR
+  SHIPYARD
+  ADMIN
 }
 
 enum Role {

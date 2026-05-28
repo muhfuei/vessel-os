@@ -17,7 +17,7 @@ export default async function TaskDetailPage({
   const session = await getSession()
   if (!session) return null
 
-  const [task, equipment, users, currentUser] = await Promise.all([
+  const [task, equipment, users] = await Promise.all([
     prisma.maintenanceTask.findUnique({
       where: { id: taskId },
       include: {
@@ -35,12 +35,8 @@ export default async function TaskDetailPage({
     }),
     prisma.user.findMany({
       where: { companyId: session.companyId, status: 'ACTIVE' },
-      select: { id: true, name: true, position: true },
+      select: { id: true, name: true, position: true, department: true, operationalDomain: true },
       orderBy: { name: 'asc' },
-    }),
-    prisma.user.findUnique({
-      where: { id: session.id },
-      select: { position: true },
     }),
   ])
 
@@ -82,8 +78,6 @@ export default async function TaskDetailPage({
                 }}
                 vesselId={id}
                 isAdmin={isAdmin}
-                currentUserRole={session.role}
-                currentUserPosition={currentUser?.position ?? null}
                 equipment={equipment}
                 users={users}
               />

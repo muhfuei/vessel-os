@@ -3,49 +3,30 @@
 import { useState, useRef } from 'react'
 import { createTaskAction } from '@/app/actions/tasks'
 import { Plus, X } from 'lucide-react'
-import {
-  canAssignTo,
-  sortByRank,
-  POSITIONS,
-  POSITION_GROUPS,
-} from '@/lib/positionHierarchy'
+import { canHandleMaintenance, groupByDepartment } from '@/lib/operationalDomains'
 
-type UserOption = { id: string; name: string; position: string | null }
+type UserOption = {
+  id: string
+  name: string
+  position: string | null
+  department: string | null
+  operationalDomain: string | null
+}
 
 type Props = {
   vesselId: string
   equipment: { id: string; name: string }[]
   users: UserOption[]
-  currentUserRole: string
-  currentUserPosition: string | null
 }
 
-export default function NewTaskModal({
-  vesselId,
-  equipment,
-  users,
-  currentUserRole,
-  currentUserPosition,
-}: Props) {
+export default function NewTaskModal({ vesselId, equipment, users }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
-  // Filter and sort assignable users by position hierarchy
-  const assignableUsers = sortByRank(
-    users.filter((u) => canAssignTo(currentUserRole, currentUserPosition, u.position)),
-  )
-
-  const grouped = POSITION_GROUPS.map((group) => ({
-    group,
-    members: assignableUsers.filter(
-      (u) => POSITIONS.find((p) => p.label === u.position)?.group === group,
-    ),
-  })).filter((g) => g.members.length > 0)
-
-  const ungrouped = assignableUsers.filter(
-    (u) => !u.position || !POSITIONS.find((p) => p.label === u.position),
-  )
+  // Filter to users whose domain can handle maintenance tasks, group by department
+  const eligible = users.filter((u) => canHandleMaintenance(u.operationalDomain))
+  const grouped = groupByDepartment(eligible)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -120,14 +101,13 @@ export default function NewTaskModal({
                 </div>
               </div>
 
-              {/* Assign To — filtered by position hierarchy */}
+              {/* Assign To — domain-filtered, grouped by department */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
                 <select name="assignedToId" className="input">
                   <option value="">— Unassigned —</option>
-
-                  {grouped.map(({ group, members }) => (
-                    <optgroup key={group} label={group}>
+                  {grouped.map(({ dept, members }) => (
+                    <optgroup key={dept} label={dept}>
                       {members.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name}{u.position ? ` — ${u.position}` : ''}
@@ -135,17 +115,10 @@ export default function NewTaskModal({
                       ))}
                     </optgroup>
                   ))}
-
-                  {ungrouped.length > 0 && (
-                    <optgroup label="Other">
-                      {ungrouped.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name}{u.position ? ` — ${u.position}` : ''}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
                 </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  Only Technical, Marine Operations, Management and Shipyard staff shown.
+                </p>
               </div>
 
               <div>

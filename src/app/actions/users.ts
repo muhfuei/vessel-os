@@ -20,6 +20,7 @@ export async function createUserAction(formData: FormData) {
   const role = formData.get('role') as string
   const position = (formData.get('position') as string | null)?.trim() || null
   const department = (formData.get('department') as string | null)?.trim() || null
+  const operationalDomain = (formData.get('operationalDomain') as string | null)?.trim() || null
 
   if (!name || !email || !password || !role) return { error: 'All required fields must be filled.' }
   if (password.length < 6) return { error: 'Password must be at least 6 characters.' }
@@ -37,6 +38,7 @@ export async function createUserAction(formData: FormData) {
       role: role as 'ADMIN' | 'USER' | 'VIEWER',
       position: position || undefined,
       department: department || undefined,
+      operationalDomain: (operationalDomain as never) || undefined,
       companyId: session.companyId,
     },
   })
@@ -55,6 +57,7 @@ export async function updateUserAction(formData: FormData) {
   const status = formData.get('status') as string
   const position = (formData.get('position') as string | null)?.trim() || null
   const department = (formData.get('department') as string | null)?.trim() || null
+  const operationalDomain = (formData.get('operationalDomain') as string | null)?.trim() || null
   const vesselIds = formData.getAll('vesselIds') as string[]
 
   if (!name || !email) return { error: 'Name and email are required.' }
@@ -76,8 +79,9 @@ export async function updateUserAction(formData: FormData) {
         email,
         role: role as 'ADMIN' | 'USER' | 'VIEWER',
         status: status as 'ACTIVE' | 'INACTIVE',
-        position: position || undefined,
-        department: department || undefined,
+        position: position || null,
+        department: department || null,
+        operationalDomain: (operationalDomain as never) || null,
       },
     }),
     prisma.vesselUserAccess.deleteMany({ where: { userId: id } }),

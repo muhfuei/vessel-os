@@ -32,7 +32,7 @@ export default async function VesselTasksPage({
     where.status = status
   }
 
-  const [tasks, equipment, users, currentUser] = await Promise.all([
+  const [tasks, equipment, users] = await Promise.all([
     prisma.maintenanceTask.findMany({
       where,
       include: { equipment: { select: { name: true } }, assignedTo: { select: { name: true } } },
@@ -45,12 +45,8 @@ export default async function VesselTasksPage({
     }),
     prisma.user.findMany({
       where: { companyId: session.companyId, status: 'ACTIVE' },
-      select: { id: true, name: true, position: true },
+      select: { id: true, name: true, position: true, department: true, operationalDomain: true },
       orderBy: { name: 'asc' },
-    }),
-    prisma.user.findUnique({
-      where: { id: session.id },
-      select: { position: true },
     }),
   ])
 
@@ -63,13 +59,7 @@ export default async function VesselTasksPage({
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Maintenance</h1>
           {session.role !== 'VIEWER' && (
-            <NewTaskModal
-              vesselId={id}
-              equipment={equipment}
-              users={users}
-              currentUserRole={session.role}
-              currentUserPosition={currentUser?.position ?? null}
-            />
+            <NewTaskModal vesselId={id} equipment={equipment} users={users} />
           )}
         </div>
       </div>

@@ -11,7 +11,17 @@ export default async function UsersPage() {
   const [users, vessels] = await Promise.all([
     prisma.user.findMany({
       where: { companyId: session.companyId },
-      include: { vesselAccess: { include: { vessel: { select: { id: true, name: true } } } } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        position: true,
+        department: true,
+        operationalDomain: true,
+        role: true,
+        status: true,
+        vesselAccess: { include: { vessel: { select: { id: true, name: true } } } },
+      },
       orderBy: { name: 'asc' },
     }),
     prisma.vessel.findMany({
