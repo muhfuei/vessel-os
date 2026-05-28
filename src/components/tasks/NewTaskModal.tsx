@@ -3,17 +3,49 @@
 import { useState, useRef } from 'react'
 import { createTaskAction } from '@/app/actions/tasks'
 import { Plus, X } from 'lucide-react'
+import {
+  canAssignTo,
+  sortByRank,
+  POSITIONS,
+  POSITION_GROUPS,
+} from '@/lib/positionHierarchy'
+
+type UserOption = { id: string; name: string; position: string | null }
 
 type Props = {
   vesselId: string
   equipment: { id: string; name: string }[]
-  users: { id: string; name: string }[]
+  users: UserOption[]
+  currentUserRole: string
+  currentUserPosition: string | null
 }
 
-export default function NewTaskModal({ vesselId, equipment, users }: Props) {
+export default function NewTaskModal({
+  vesselId,
+  equipment,
+  users,
+  currentUserRole,
+  currentUserPosition,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+
+  // Filter and sort assignable users by position hierarchy
+  const assignableUsers = sortByRank(
+    users.filter((u) => canAssignTo(currentUserRole, currentUserPosition, u.position)),
+  )
+
+  const grouped = POSITION_GROUPS.map((group) => ({
+    group,
+    members: assignableUsers.filter(
+      (u) => POSITIONS.find((p) => p.label === u.position)?.group === group,
+    ),
+  })).filter((g) => g.members.length > 0)
+
+  const ungrouped = assignableUsers.filter(
+    (u) => !u.position || !POSITIONS.find((p) => p.label === u.position),
+  )
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -40,7 +72,7 @@ export default function NewTaskModal({ vesselId, equipment, users }: Props) {
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
           <div className="relative w-full lg:max-w-lg bg-white rounded-t-2xl lg:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
               <h2 className="font-semibold text-gray-900">New Maintenance Task</h2>
               <button onClick={() => setOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
@@ -77,7 +109,7 @@ export default function NewTaskModal({ vesselId, equipment, users }: Props) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
                   <select name="priority" className="input">
                     <option value="LOW">Low</option>
-                    <option value="NORMAL" selected>Normal</option>
+                    <option value="NORMAL">Normal</option>
                     <option value="HIGH">High</option>
                     <option value="CRITICAL">Critical</option>
                   </select>
@@ -88,13 +120,31 @@ export default function NewTaskModal({ vesselId, equipment, users }: Props) {
                 </div>
               </div>
 
+              {/* Assign To — filtered by position hierarchy */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
                 <select name="assignedToId" className="input">
                   <option value="">— Unassigned —</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
+
+                  {grouped.map(({ group, members }) => (
+                    <optgroup key={group} label={group}>
+                      {members.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}{u.position ? ` — ${u.position}` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
+
+                  {ungrouped.length > 0 && (
+                    <optgroup label="Other">
+                      {ungrouped.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}{u.position ? ` — ${u.position}` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 

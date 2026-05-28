@@ -32,14 +32,27 @@ export default async function VesselTasksPage({
     where.status = status
   }
 
-  const tasks = await prisma.maintenanceTask.findMany({
-    where,
-    include: { equipment: { select: { name: true } }, assignedTo: { select: { name: true } } },
-    orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
-  })
-
-  const equipment = await prisma.equipment.findMany({ where: { vesselId: id }, select: { id: true, name: true } })
-  const users = await prisma.user.findMany({ where: { companyId: session.companyId }, select: { id: true, name: true } })
+  const [tasks, equipment, users, currentUser] = await Promise.all([
+    prisma.maintenanceTask.findMany({
+      where,
+      include: { equipment: { select: { name: true } }, assignedTo: { select: { name: true } } },
+      orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+    }),
+    prisma.equipment.findMany({
+      where: { vesselId: id },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.user.findMany({
+      where: { companyId: session.companyId, status: 'ACTIVE' },
+      select: { id: true, name: true, position: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.id },
+      select: { position: true },
+    }),
+  ])
 
   return (
     <div className="p-4 lg:p-6 pb-24 lg:pb-6 space-y-4">
@@ -50,7 +63,13 @@ export default async function VesselTasksPage({
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Maintenance</h1>
           {session.role !== 'VIEWER' && (
-            <NewTaskModal vesselId={id} equipment={equipment} users={users} />
+            <NewTaskModal
+              vesselId={id}
+              equipment={equipment}
+              users={users}
+              currentUserRole={session.role}
+              currentUserPosition={currentUser?.position ?? null}
+            />
           )}
         </div>
       </div>
@@ -84,7 +103,9 @@ export default async function VesselTasksPage({
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {t.taskCode && <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{t.taskCode}</span>}
+                      {t.taskCode && (
+                        <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{t.taskCode}</span>
+                      )}
                       <h3 className="font-semibold text-gray-900 text-sm">{t.title}</h3>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">

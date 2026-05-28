@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Users, Plus, X, Pencil, Trash2, ShieldCheck, Eye, User } from 'lucide-react'
 import { createUserAction, updateUserAction, deleteUserAction } from '@/app/actions/users'
+import { POSITIONS, POSITION_GROUPS } from '@/lib/positionHierarchy'
 
 type Vessel = { id: string; name: string }
 type UserRow = {
@@ -89,13 +90,18 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
                 {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Position</label>
-              <input name="position" className="input" placeholder="Captain / Master" />
-            </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
-              <input name="department" className="input" placeholder="Deck" />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Position</label>
+              <select name="position" className="input">
+                <option value="">— Select position —</option>
+                {POSITION_GROUPS.map((group) => (
+                  <optgroup key={group} label={group}>
+                    {POSITIONS.filter((p) => p.group === group).map((p) => (
+                      <option key={p.label} value={p.label}>{p.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -165,13 +171,18 @@ function EditUserModal({ user, vessels, onClose }: { user: UserRow; vessels: Ves
                 <option value="INACTIVE">Inactive</option>
               </select>
             </div>
-            <div>
+            <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">Position</label>
-              <input name="position" defaultValue={user.position ?? ''} className="input" placeholder="Captain / Master" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
-              <input name="department" defaultValue={user.department ?? ''} className="input" placeholder="Deck" />
+              <select name="position" defaultValue={user.position ?? ''} className="input">
+                <option value="">— Select position —</option>
+                {POSITION_GROUPS.map((group) => (
+                  <optgroup key={group} label={group}>
+                    {POSITIONS.filter((p) => p.group === group).map((p) => (
+                      <option key={p.label} value={p.label}>{p.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
             </div>
           </div>
 

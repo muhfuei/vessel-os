@@ -17,7 +17,7 @@ export default async function TaskDetailPage({
   const session = await getSession()
   if (!session) return null
 
-  const [task, equipment, users] = await Promise.all([
+  const [task, equipment, users, currentUser] = await Promise.all([
     prisma.maintenanceTask.findUnique({
       where: { id: taskId },
       include: {
@@ -28,8 +28,20 @@ export default async function TaskDetailPage({
         wcrs: { select: { id: true, reportNumber: true, title: true, status: true, createdAt: true } },
       },
     }),
-    prisma.equipment.findMany({ where: { vesselId: id }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
-    prisma.user.findMany({ where: { companyId: session.companyId, status: 'ACTIVE' }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+    prisma.equipment.findMany({
+      where: { vesselId: id },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.user.findMany({
+      where: { companyId: session.companyId, status: 'ACTIVE' },
+      select: { id: true, name: true, position: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.id },
+      select: { position: true },
+    }),
   ])
 
   if (!task) notFound()
@@ -45,7 +57,9 @@ export default async function TaskDetailPage({
         </Link>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            {task.taskCode && <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{task.taskCode}</span>}
+            {task.taskCode && (
+              <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{task.taskCode}</span>
+            )}
             <h1 className="text-xl font-bold text-gray-900 mt-1">{task.title}</h1>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -68,6 +82,8 @@ export default async function TaskDetailPage({
                 }}
                 vesselId={id}
                 isAdmin={isAdmin}
+                currentUserRole={session.role}
+                currentUserPosition={currentUser?.position ?? null}
                 equipment={equipment}
                 users={users}
               />
@@ -84,7 +100,16 @@ export default async function TaskDetailPage({
       {/* Info cards */}
       <div className="grid grid-cols-2 gap-3">
         <InfoCard label="Equipment" value={task.equipment?.name ?? 'General'} />
-        <InfoCard label="Assigned To" value={task.assignedTo?.name ?? 'Unassigned'} />
+        <InfoCard
+          label="Assigned To"
+          value={
+            task.assignedTo
+              ? task.assignedTo.position
+                ? `${task.assignedTo.name} — ${task.assignedTo.position}`
+                : task.assignedTo.name
+              : 'Unassigned'
+          }
+        />
         <InfoCard label="Priority" value={formatStatus(task.priority)} />
         <InfoCard label="Due Date" value={formatDate(task.dueDate)} />
         {task.dueHours && <InfoCard label="Due Hours" value={`${task.dueHours} hrs`} />}
@@ -111,7 +136,9 @@ export default async function TaskDetailPage({
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700">Evidence & Photos</h3>
-          <span className="text-xs text-gray-400">{task.evidence.length} file{task.evidence.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-gray-400">
+            {task.evidence.length} file{task.evidence.length !== 1 ? 's' : ''}
+          </span>
         </div>
         {canEdit && (
           <div className="p-4 border-b border-gray-50">
@@ -120,8 +147,13 @@ export default async function TaskDetailPage({
         )}
         <div className="divide-y divide-gray-50">
           {task.evidence.map((e) => (
-            <a key={e.id} href={e.fileUrl} target="_blank" rel="noopener noreferrer"
-               className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+            <a
+              key={e.id}
+              href={e.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+            >
               <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-xs font-medium text-blue-600">
                 {e.fileType?.includes('image') ? '🖼' : '📄'}
               </div>
@@ -145,8 +177,11 @@ export default async function TaskDetailPage({
           </div>
           <div className="divide-y divide-gray-50">
             {task.wcrs.map((w) => (
-              <Link key={w.id} href={`/vessels/${id}/reports/${w.id}`}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+              <Link
+                key={w.id}
+                href={`/vessels/${id}/reports/${w.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+              >
                 <div>
                   <p className="text-sm font-medium text-gray-900">{w.reportNumber}</p>
                   <p className="text-xs text-gray-400">{w.title}</p>

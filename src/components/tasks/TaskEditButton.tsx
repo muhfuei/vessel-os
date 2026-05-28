@@ -4,6 +4,14 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Pencil, Trash2, X } from 'lucide-react'
 import { updateTaskAction, deleteTaskAction } from '@/app/actions/tasks'
+import {
+  canAssignTo,
+  sortByRank,
+  POSITIONS,
+  POSITION_GROUPS,
+} from '@/lib/positionHierarchy'
+
+type UserOption = { id: string; name: string; position: string | null }
 
 type TaskData = {
   id: string
@@ -22,14 +30,42 @@ type Props = {
   task: TaskData
   vesselId: string
   isAdmin: boolean
+  currentUserRole: string
+  currentUserPosition: string | null
   equipment: { id: string; name: string }[]
-  users: { id: string; name: string }[]
+  users: UserOption[]
 }
 
-export default function TaskEditButton({ task, vesselId, isAdmin, equipment, users }: Props) {
+export default function TaskEditButton({
+  task,
+  vesselId,
+  isAdmin,
+  currentUserRole,
+  currentUserPosition,
+  equipment,
+  users,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+
+  // Filter assignable users based on position hierarchy
+  const assignableUsers = sortByRank(
+    users.filter((u) => canAssignTo(currentUserRole, currentUserPosition, u.position)),
+  )
+
+  // Group assignable users by position group for the dropdown
+  const grouped = POSITION_GROUPS.map((group) => ({
+    group,
+    members: assignableUsers.filter(
+      (u) => POSITIONS.find((p) => p.label === u.position)?.group === group,
+    ),
+  })).filter((g) => g.members.length > 0)
+
+  // Users with no/unknown position
+  const ungrouped = assignableUsers.filter(
+    (u) => !u.position || !POSITIONS.find((p) => p.label === u.position),
+  )
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -131,13 +167,33 @@ export default function TaskEditButton({ task, vesselId, isAdmin, equipment, use
                 </div>
               </div>
 
+              {/* Assign To — filtered by position hierarchy */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
                 <select name="assignedToId" defaultValue={task.assignedToId ?? ''} className="input">
                   <option value="">— Unassigned —</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
+
+                  {/* Grouped by org level */}
+                  {grouped.map(({ group, members }) => (
+                    <optgroup key={group} label={group}>
+                      {members.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}{u.position ? ` — ${u.position}` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
+
+                  {/* Users without a recognised position */}
+                  {ungrouped.length > 0 && (
+                    <optgroup label="Other">
+                      {ungrouped.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}{u.position ? ` — ${u.position}` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 
