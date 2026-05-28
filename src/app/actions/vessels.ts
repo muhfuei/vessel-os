@@ -23,7 +23,7 @@ export async function createVesselAction(formData: FormData) {
       yearBuilt: (formData.get('yearBuilt') as string) || null,
       grossTonnage: (formData.get('grossTonnage') as string) || null,
       mainEngine: (formData.get('mainEngine') as string) || null,
-      companyId: session.companyId,
+      companyId: session.companyId!,
     },
   })
 
@@ -43,7 +43,7 @@ export async function updateVesselAction(formData: FormData) {
   }
 
   await prisma.vessel.update({
-    where: { id, companyId: session.companyId },
+    where: { id, companyId: session.companyId! },
     data: {
       name: (formData.get('name') as string).trim(),
       imoNumber: toStr('imoNumber'),
@@ -81,7 +81,7 @@ export async function updateVesselStatusAction(vesselId: string, status: string)
   if (session.role !== 'ADMIN') throw new Error('Only administrators can update vessel status')
 
   await prisma.vessel.update({
-    where: { id: vesselId, companyId: session.companyId },
+    where: { id: vesselId, companyId: session.companyId! },
     data: { status: status as never },
   })
   revalidatePath('/vessels')

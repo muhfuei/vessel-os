@@ -11,7 +11,7 @@ export default async function AllDefectsPage({ searchParams }: { searchParams: P
 
   const vesselIds =
     session.role === 'ADMIN'
-      ? (await prisma.vessel.findMany({ where: { companyId: session.companyId }, select: { id: true } })).map((v) => v.id)
+      ? (await prisma.vessel.findMany({ where: { companyId: session.companyId! }, select: { id: true } })).map((v) => v.id)
       : await getUserVesselIds(session.id)
 
   const where: Record<string, unknown> = {

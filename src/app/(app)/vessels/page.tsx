@@ -16,7 +16,7 @@ export default async function VesselsPage() {
 
   const vessels = await prisma.vessel.findMany({
     where: {
-      companyId: session.companyId,
+      companyId: session.companyId!,
       ...(vesselIds ? { id: { in: vesselIds } } : {}),
     },
     include: {

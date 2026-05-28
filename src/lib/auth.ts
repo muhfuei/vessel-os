@@ -2,11 +2,11 @@ import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { prisma } from './db'
 
-const jwtSecret = process.env.JWT_SECRET
-if (!jwtSecret) {
-  throw new Error('JWT_SECRET environment variable is not set')
+function getSecret(): Uint8Array {
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set')
+  return new TextEncoder().encode(jwtSecret)
 }
-const secret = new TextEncoder().encode(jwtSecret)
 
 const COOKIE_NAME = 'vessel_os_session'
 
@@ -22,7 +22,7 @@ export async function createSession(user: SessionUser) {
   const token = await new SignJWT({ ...user })
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
-    .sign(secret)
+    .sign(getSecret())
 
   const cookieStore = await cookies()
   cookieStore.set(COOKIE_NAME, token, {
@@ -39,7 +39,7 @@ export async function getSession(): Promise<SessionUser | null> {
     const cookieStore = await cookies()
     const token = cookieStore.get(COOKIE_NAME)?.value
     if (!token) return null
-    const { payload } = await jwtVerify(token, secret)
+    const { payload } = await jwtVerify(token, getSecret())
     return payload as unknown as SessionUser
   } catch {
     return null

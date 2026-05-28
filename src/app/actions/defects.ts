@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 
-async function assertVesselAccess(vesselId: string, userId: string, role: string, companyId: string) {
+async function assertVesselAccess(vesselId: string, userId: string, role: string, companyId: string | null) {
+  if (!companyId) throw new Error('No company access')
   if (role === 'ADMIN') {
     const vessel = await prisma.vessel.findFirst({ where: { id: vesselId, companyId } })
     if (!vessel) throw new Error('Vessel not found')

@@ -10,7 +10,7 @@ export default async function UsersPage() {
 
   const [users, vessels] = await Promise.all([
     prisma.user.findMany({
-      where: { companyId: session.companyId },
+      where: { companyId: session.companyId! },
       select: {
         id: true,
         name: true,
@@ -25,7 +25,7 @@ export default async function UsersPage() {
       orderBy: { name: 'asc' },
     }),
     prisma.vessel.findMany({
-      where: { companyId: session.companyId },
+      where: { companyId: session.companyId! },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),
