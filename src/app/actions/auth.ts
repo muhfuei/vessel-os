@@ -11,7 +11,6 @@ export async function loginAction(formData: FormData) {
 
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { company: true },
   })
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -27,8 +26,13 @@ export async function loginAction(formData: FormData) {
     name: user.name,
     email: user.email,
     role: user.role,
-    companyId: user.companyId,
+    companyId: user.companyId ?? null,
   })
+
+  // Route by role: Super Admin goes to their own portal
+  if (user.role === 'SUPER_ADMIN') {
+    redirect('/super-admin')
+  }
 
   redirect('/dashboard')
 }

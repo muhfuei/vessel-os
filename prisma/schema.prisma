@@ -10,36 +10,43 @@ datasource db {
 // ─── Company ──────────────────────────────────────────────────────────────────
 
 model Company {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   name      String
   address   String?
   phone     String?
   email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    CompanyStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   users   User[]
   vessels Vessel[]
 }
 
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id                String            @id @default(cuid())
+  id                String             @id @default(cuid())
   name              String
-  email             String            @unique
+  email             String             @unique
   password          String
   phone             String?
   position          String?
   department        String?
   operationalDomain OperationalDomain?
-  role              Role              @default(USER)
-  status            UserStatus        @default(ACTIVE)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  role              Role               @default(USER)
+  status            UserStatus         @default(ACTIVE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id])
+  // nullable: SUPER_ADMIN has no company
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   vesselAccess  VesselUserAccess[]
   tasksAssigned MaintenanceTask[]    @relation("AssignedTo")
@@ -58,7 +65,8 @@ enum OperationalDomain {
 }
 
 enum Role {
-  ADMIN
+  SUPER_ADMIN  // Platform owner — no company, accesses /super-admin only
+  ADMIN        // Company Admin
   USER
   VIEWER
 }

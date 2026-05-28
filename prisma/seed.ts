@@ -10,6 +10,20 @@ const prisma = new PrismaClient({ adapter })
 async function main() {
   console.log('Seeding database…')
 
+  // ── Super Admin (platform owner — no company) ────────────────────────────
+  const superAdminPassword = await bcrypt.hash('ChangeMe123!', 10)
+  await prisma.user.upsert({
+    where: { email: 'superadmin@vessel-os.com' },
+    update: {},
+    create: {
+      name: 'Super Admin',
+      email: 'superadmin@vessel-os.com',
+      password: superAdminPassword,
+      role: 'SUPER_ADMIN',
+      // companyId intentionally null — SUPER_ADMIN is platform-level
+    },
+  })
+
   // Company
   const company = await prisma.company.upsert({
     where: { id: 'company-ajang' },
@@ -364,10 +378,11 @@ async function main() {
   console.log('✅ Seed complete!')
   console.log('')
   console.log('Login credentials:')
-  console.log('  Admin:   admin@ajangshipping.com / admin123')
-  console.log('  User:    captain@ajangshipping.com / user123')
-  console.log('  Engineer: ce@ajangshipping.com / user123')
-  console.log('  Viewer:  viewer@ajangshipping.com / user123')
+  console.log('  Super Admin: superadmin@vessel-os.com / ChangeMe123!')
+  console.log('  Admin:       admin@ajangshipping.com / admin123')
+  console.log('  User:        captain@ajangshipping.com / user123')
+  console.log('  Engineer:    ce@ajangshipping.com / user123')
+  console.log('  Viewer:      viewer@ajangshipping.com / user123')
 }
 
 main()

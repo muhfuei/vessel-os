@@ -6,6 +6,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getSession()
   if (!session) redirect('/login')
 
+  // Super Admin has their own portal — keep them out of the company app
+  if (session.role === 'SUPER_ADMIN') redirect('/super-admin')
+
   return (
     <div className="flex h-full">
       <Sidebar user={session} />

@@ -15,11 +15,11 @@ export type SessionUser = {
   name: string
   email: string
   role: string
-  companyId: string
+  companyId: string | null  // null for SUPER_ADMIN (platform-level, no company)
 }
 
 export async function createSession(user: SessionUser) {
-  const token = await new SignJWT(user)
+  const token = await new SignJWT({ ...user })
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
     .sign(secret)
@@ -57,9 +57,17 @@ export async function requireAuth(): Promise<SessionUser> {
   return session
 }
 
+/** Company-level admin (ADMIN role). SUPER_ADMIN cannot call company actions. */
 export async function requireAdmin(): Promise<SessionUser> {
   const session = await requireAuth()
   if (session.role !== 'ADMIN') throw new Error('Forbidden')
+  return session
+}
+
+/** Platform-level Super Admin only. */
+export async function requireSuperAdmin(): Promise<SessionUser> {
+  const session = await requireAuth()
+  if (session.role !== 'SUPER_ADMIN') throw new Error('Forbidden: Super Admin only')
   return session
 }
 
